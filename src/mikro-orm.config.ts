@@ -4,6 +4,7 @@ import { MikroORM } from '@mikro-orm/core';
 
 import { IS_PRODUCTION } from './constants';
 import { Post } from './entities/Post';
+import { User } from './entities/User';
 
 export default {
 	migrations: {
@@ -17,7 +18,7 @@ export default {
 		safe: false, // allow to disable table and column dropping
 		emit: 'ts', // migration generation mode
 	},
-	entities: [Post],
+	entities: [Post, User],
 	dbName: 'typegraphql-reddit-clone-test',
 	type: 'postgresql',
 	debug: !IS_PRODUCTION,
