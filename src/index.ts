@@ -40,6 +40,7 @@ import { MyContext } from './types';
 					sameSite: 'lax', // csrf
 					secure: IS_PRODUCTION, // cookie only works in https
 				},
+				saveUninitialized: false,
 				secret: 'secret',
 				resave: false,
 			})
