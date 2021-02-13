@@ -10,6 +10,6 @@ export type MyContext = {
 
 declare module 'express-session' {
 	export interface SessionData {
-		userId: any;
+		userId: number;
 	}
 }
