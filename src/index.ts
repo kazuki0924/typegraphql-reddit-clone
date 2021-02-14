@@ -15,6 +15,7 @@ import { HelloResolver } from './resolvers/hello';
 import { PostResolver } from './resolvers/post';
 import { UserResolver } from './resolvers/user';
 import { MyContext } from './types';
+import cors from 'cors';
 
 (async () => {
 	try {
@@ -25,6 +26,8 @@ import { MyContext } from './types';
 
 		const RedisStore = connectRedis(session);
 		const redisClient = redis.createClient();
+
+		app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 
 		app.use(
 			session({
@@ -58,7 +61,11 @@ import { MyContext } from './types';
 		// 	res.send('hello');
 		// });
 
-		apolloServer.applyMiddleware({ app });
+		apolloServer.applyMiddleware({
+			app,
+			// cors: { origin: 'http://localhost:3000' },
+			cors: false,
+		});
 
 		app.listen(4000, () => {
 			console.log('server started on localhost:4000');
