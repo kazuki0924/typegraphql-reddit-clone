@@ -9,7 +9,7 @@ import { buildSchema } from 'type-graphql';
 
 import { MikroORM } from '@mikro-orm/core';
 
-import { IS_PRODUCTION } from './constants';
+import { COOKIE_NAME, IS_PRODUCTION } from './constants';
 import mikroConfig from './mikro-orm.config';
 import { HelloResolver } from './resolvers/hello';
 import { PostResolver } from './resolvers/post';
@@ -31,7 +31,7 @@ import cors from 'cors';
 
 		app.use(
 			session({
-				name: 'qid',
+				name: COOKIE_NAME,
 				store: new RedisStore({
 					client: redisClient,
 					disableTTL: true,

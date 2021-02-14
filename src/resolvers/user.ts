@@ -1,5 +1,16 @@
+import { EntityManager } from '@mikro-orm/postgresql';
 import argon2 from 'argon2';
-import { Arg, Ctx, Field, InputType, Mutation, ObjectType, Query, Resolver } from 'type-graphql';
+import {
+	Arg,
+	Ctx,
+	Field,
+	InputType,
+	Mutation,
+	ObjectType,
+	Query,
+	Resolver,
+} from 'type-graphql';
+import { COOKIE_NAME } from '../constants';
 
 import { User } from '../entities/User';
 import { MyContext } from '../types';
@@ -70,15 +81,28 @@ export class UserResolver {
 		}
 
 		const hashedPassword = await argon2.hash(options.password);
-		const user = em.create(User, {
-			username: options.username,
-			password: hashedPassword,
-		});
+		// const user = em.create(User, {
+		// 	username: options.username,
+		// 	password: hashedPassword,
+		// });
 
+		let user;
 		try {
-			await em.persistAndFlush(user);
+			// await em.persistAndFlush(user);
+			const res = await (em as EntityManager)
+				.createQueryBuilder(User)
+				.getKnexQuery()
+				.insert({
+					username: options.username,
+					password: hashedPassword,
+					created_at: new Date(),
+					updated_at: new Date(),
+				})
+				.returning('*');
+			user = res[0];
 		} catch (err) {
-			if (err.code === '23505' || err.detail.includes('already exists')) {
+			console.error(err);
+			if (err.detail.includes('already exists')) {
 				// duplicate username error
 				return {
 					errors: [
@@ -127,5 +151,21 @@ export class UserResolver {
 		req.session!.userId = user.id;
 
 		return { user };
+	}
+
+	@Mutation(() => Boolean)
+	logout(@Ctx() { req, res }: MyContext) {
+		res.clearCookie(COOKIE_NAME);
+		return new Promise(resolve =>
+			req.session.destroy(err => {
+				if (err) {
+					console.log(err);
+					resolve(false);
+					return;
+				}
+
+				resolve(true);
+			})
+		);
 	}
 }
