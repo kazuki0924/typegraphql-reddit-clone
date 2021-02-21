@@ -4,7 +4,7 @@ import connectRedis from 'connect-redis';
 import cors from 'cors';
 import express from 'express';
 import session from 'express-session';
-import redis from 'redis';
+import Redis from 'ioredis';
 import 'reflect-metadata';
 import { buildSchema } from 'type-graphql';
 import { COOKIE_NAME, IS_PRODUCTION } from './constants';
@@ -23,7 +23,7 @@ import { MyContext } from './types';
 		const app = express();
 
 		const RedisStore = connectRedis(session);
-		const redisClient = redis.createClient();
+		const redis = Redis();
 
 		app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 
@@ -31,7 +31,7 @@ import { MyContext } from './types';
 			session({
 				name: COOKIE_NAME,
 				store: new RedisStore({
-					client: redisClient,
+					client: redis,
 					disableTTL: true,
 					disableTouch: true,
 				}),
@@ -52,7 +52,7 @@ import { MyContext } from './types';
 				resolvers: [HelloResolver, PostResolver, UserResolver],
 				validate: false,
 			}),
-			context: ({ req, res }): MyContext => ({ em: orm.em, req, res }),
+			context: ({ req, res }): MyContext => ({ em: orm.em, req, res, redis }),
 		});
 
 		// app.get('/', (_, res) => {

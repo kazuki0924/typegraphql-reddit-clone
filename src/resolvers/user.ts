@@ -13,6 +13,7 @@ import { COOKIE_NAME } from '../constants';
 
 import { User } from '../entities/User';
 import { MyContext } from '../types';
+import { sendEmail } from '../utils/sendEmail';
 import { validateRegister } from '../utils/validateRegister';
 import { UsernamePasswordInput } from './UsernamePasswordInput';
 
@@ -35,11 +36,22 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
-	// @Mutation(() => Boolean)
-	// async forgotPassword(@Arg('email') email: string, @Ctx() { em }: MyContext) {
-	// const user = await em.findOne(User, { email });
-	// return true;
-	// }
+	@Mutation(() => Boolean)
+	async forgotPassword(@Arg('email') email: string, @Ctx() { em }: MyContext) {
+		const user = await em.findOne(User, { email });
+		if (!user) {
+			return true;
+		}
+
+		const baseUrl = 'http://localhost:3000';
+		const token = 'sjhakfgka897473w9874';
+
+		sendEmail(
+			email,
+			`<a href="${baseUrl}/change-password/${token}">reset password</a>`
+		);
+		return true;
+	}
 
 	@Query(() => User, { nullable: true })
 	async me(@Ctx() { req, em }: MyContext) {
@@ -119,7 +131,7 @@ export class UserResolver {
 			return {
 				errors: [
 					{
-						field: 'username',
+						field: 'usernameOrEmail',
 						message: "that username doesn't exist",
 					},
 				],
