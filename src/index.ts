@@ -17,6 +17,7 @@ import { MyContext } from './types';
 (async () => {
 	try {
 		const orm = await MikroORM.init(mikroConfig);
+		// orm.em.nativeDelete(User, {});
 		await orm.getMigrator().up();
 
 		const app = express();
