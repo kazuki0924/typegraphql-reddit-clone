@@ -4,6 +4,7 @@ import cors from 'cors';
 import express from 'express';
 import session from 'express-session';
 import Redis from 'ioredis';
+import path from 'path';
 import 'reflect-metadata';
 import { buildSchema } from 'type-graphql';
 // import { MikroORM } from '@mikro-orm/core';
@@ -19,7 +20,7 @@ import { UserResolver } from './resolvers/user';
 (async () => {
 	try {
 		// const conn = await createConnection({
-		await createConnection({
+		const conn = await createConnection({
 			type: 'postgres',
 			database: 'typegraphql-reddit-clone',
 			username: 'postgres',
@@ -27,8 +28,11 @@ import { UserResolver } from './resolvers/user';
 			logging: true,
 			synchronize: true,
 			// synchronize: false,
+			migrations: [path.join(__dirname, './migrations/*')],
 			entities: [Post, User],
 		});
+
+		await conn.runMigrations();
 
 		// await Post.delete({});
 

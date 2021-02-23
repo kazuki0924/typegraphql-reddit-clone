@@ -9,6 +9,7 @@ import {
 	Resolver,
 	UseMiddleware,
 } from 'type-graphql';
+import { getConnection } from 'typeorm';
 import { Post } from '../entities/Post';
 import { isAuth } from '../middleware/isAuth';
 import { MyContext } from '../types';
@@ -25,8 +26,23 @@ class PostInput {
 @Resolver()
 export class PostResolver {
 	@Query(() => [Post])
-	posts(): Promise<Post[]> {
-		return Post.find();
+	posts(
+		@Arg('limit', () => Int) limit: number,
+		@Arg('cursor', () => String, { nullable: true }) cursor: string | null
+	): Promise<Post[]> {
+		const qb = getConnection()
+			.getRepository(Post)
+			.createQueryBuilder('post')
+			.orderBy('"createdAt"', 'DESC')
+			.take(Math.min(50, limit));
+
+		if (cursor) {
+			qb.where('"createdAt" < :cursor', {
+				cursor: new Date(parseInt(cursor)),
+			});
+		}
+
+		return qb.getMany();
 	}
 
 	@Query(() => Post, { nullable: true })
@@ -34,19 +50,9 @@ export class PostResolver {
 		return Post.findOne(id);
 	}
 
-	// @Mutation(() => Post, { nullable: true })
-	// async createPost(
-	// 	@Arg('title') title: string,
-	// 	@Ctx() { em }: MyContext
-	// ): Promise<Post | null> {
-	// 	const post = em.create(Post, { title });
-	// 	await em.persistAndFlush(post);
-	// 	return post;
-	// }
-
 	@Mutation(() => Post, { nullable: true })
 	@UseMiddleware(isAuth)
-	async createPost(
+	createPost(
 		@Arg('input') input: PostInput,
 		@Ctx() { req }: MyContext
 	): Promise<Post> {
