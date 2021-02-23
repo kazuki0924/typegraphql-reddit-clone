@@ -1,4 +1,3 @@
-import { MikroORM } from '@mikro-orm/core';
 import { ApolloServer } from 'apollo-server-express';
 import connectRedis from 'connect-redis';
 import cors from 'cors';
@@ -7,18 +6,32 @@ import session from 'express-session';
 import Redis from 'ioredis';
 import 'reflect-metadata';
 import { buildSchema } from 'type-graphql';
+// import { MikroORM } from '@mikro-orm/core';
+import { createConnection } from 'typeorm';
 import { COOKIE_NAME, IS_PRODUCTION } from './constants';
-import mikroConfig from './mikro-orm.config';
+import { Post } from './entities/Post';
+import { User } from './entities/User';
+// import mikroConfig from './mikro-orm.config';
 import { HelloResolver } from './resolvers/hello';
 import { PostResolver } from './resolvers/post';
 import { UserResolver } from './resolvers/user';
-import { MyContext } from './types';
 
 (async () => {
 	try {
-		const orm = await MikroORM.init(mikroConfig);
+		// const conn = await createConnection({
+		await createConnection({
+			type: 'postgres',
+			database: 'typegraphql-reddit-clone',
+			username: 'postgres',
+			password: 'postgres',
+			logging: true,
+			synchronize: true,
+			entities: [Post, User],
+		});
+
+		// const orm = await MikroORM.init(mikroConfig);
 		// orm.em.nativeDelete(User, {});
-		await orm.getMigrator().up();
+		// await orm.getMigrator().up();
 
 		const app = express();
 
@@ -52,7 +65,8 @@ import { MyContext } from './types';
 				resolvers: [HelloResolver, PostResolver, UserResolver],
 				validate: false,
 			}),
-			context: ({ req, res }): MyContext => ({ em: orm.em, req, res, redis }),
+			// context: ({ req, res }): MyContext => ({ em: orm.em, req, res, redis }),
+			context: ({ req, res }) => ({ req, res, redis }),
 		});
 
 		// app.get('/', (_, res) => {
