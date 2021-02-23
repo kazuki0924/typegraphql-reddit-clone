@@ -26,8 +26,11 @@ import { UserResolver } from './resolvers/user';
 			password: 'postgres',
 			logging: true,
 			synchronize: true,
+			// synchronize: false,
 			entities: [Post, User],
 		});
+
+		// await Post.delete({});
 
 		// const orm = await MikroORM.init(mikroConfig);
 		// orm.em.nativeDelete(User, {});
