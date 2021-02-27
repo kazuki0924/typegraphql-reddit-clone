@@ -3,14 +3,17 @@ import {
 	Arg,
 	Ctx,
 	Field,
+	FieldResolver,
 	Mutation,
 	ObjectType,
 	Query,
 	Resolver,
+	Root,
 } from 'type-graphql';
 import { getConnection } from 'typeorm';
 import { v4 } from 'uuid';
 import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from '../constants';
+import { Post } from '../entities/Post';
 import { User } from '../entities/User';
 import { MyContext } from '../types';
 import { sendEmail } from '../utils/sendEmail';
@@ -34,8 +37,16 @@ class UserResponse {
 	user?: User;
 }
 
-@Resolver()
+@Resolver(User)
 export class UserResolver {
+	@FieldResolver(() => String)
+	email(@Root() user: User, @Ctx() { req }: MyContext) {
+		if (req.session.userId === user.id) {
+			return user.email;
+		}
+		return '';
+	}
+
 	@Mutation(() => UserResponse)
 	async changePassword(
 		@Arg('token') token: string,
