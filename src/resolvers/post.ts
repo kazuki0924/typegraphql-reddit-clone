@@ -16,6 +16,7 @@ import { Post } from '../entities/Post';
 import { MyContext } from '../types';
 import { isAuth } from '../middleware/isAuth';
 import { getConnection } from 'typeorm';
+import { Updoot } from '../entities/Updoot';
 
 @InputType()
 class PostInput {
@@ -38,6 +39,95 @@ export class PostResolver {
 	@FieldResolver(() => String)
 	textSnippet(@Root() post: Post) {
 		return post.text.slice(0, 50);
+	}
+
+	@Mutation(() => Boolean)
+	@UseMiddleware(isAuth)
+	async vote(
+		@Arg('postId', () => Int) postId: number,
+		@Arg('value', () => Int) value: number,
+		@Ctx() { req }: MyContext
+	) {
+		const realValue = value === -1 ? -1 : 1;
+		const { userId } = req.session;
+		// await Updoot.insert({
+		// 	userId,
+		// 	postId,
+		// 	value: realValue,
+		// });
+
+		const updoot = await Updoot.findOne({ where: { postId, userId } });
+
+		if (updoot && updoot.value !== realValue) {
+			await getConnection().transaction(async tm => {
+				await tm.query(
+					/* sql */ `
+					UPDATE updoot SET value = $1
+					WHERE "postId" = $2 AND "userId" = $3;
+					`,
+					[userId, postId, realValue]
+				);
+
+				await tm.query(
+					/* sql*/ `
+				UPDATE post SET points = points + $1
+				WHERE id = $2;
+				`,
+					[2 * realValue, postId]
+				);
+			});
+		} else if (!updoot) {
+			await getConnection().transaction(async tm => {
+				await tm.query(
+					/* sql */ `
+				INSERT INTO updoot ("userId", "postId", "value")
+				VALUES ($1, $2, $3);
+				`,
+					[userId, postId, realValue]
+				);
+
+				await tm.query(
+					/* sql*/ `
+				UPDATE post SET points = points + $1
+				WHERE id = $2;
+				`,
+					[realValue, postId]
+				);
+			});
+		}
+
+		// await getConnection().transaction(async tm => {
+		// 	await tm.query(
+		// 		/* sql*/ `
+		// 	INSERT INTO updoot ("userId", "postId", "value")
+		// 	VALUES ($1, $2, $3);
+		// `,
+		// 		[userId, postId, realValue]
+		// 	);
+
+		// 	await tm.query(
+		// 		/* sql*/ `
+		// 	UPDATE post SET points = points + $1
+		// 	WHERE id = $2;
+		// `,
+		// 		[2 * realValue, postId]
+		// 	);
+		// });
+		// await getConnection().query(
+		// 	/* sql*/ `
+		// 			WITH
+		// START TRANSACTION,
+
+		// INSERT INTO updoot ("userId", "postId", "value")
+		// VALUES ($1, $2, $3),
+		// UPDATE post SET points = points + $3
+		// WHERE id = $2,
+		// COMMIT;
+		// `,
+		// 	[userId, postId, realValue]
+		// );
+
+		return true;
 	}
 
 	@Query(() => PaginatedPosts)

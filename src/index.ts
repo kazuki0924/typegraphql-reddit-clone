@@ -11,6 +11,7 @@ import { buildSchema } from 'type-graphql';
 import { createConnection } from 'typeorm';
 import { COOKIE_NAME, IS_PRODUCTION } from './constants';
 import { Post } from './entities/Post';
+import { Updoot } from './entities/Updoot';
 import { User } from './entities/User';
 // import mikroConfig from './mikro-orm.config';
 import { HelloResolver } from './resolvers/hello';
@@ -29,7 +30,7 @@ import { UserResolver } from './resolvers/user';
 			synchronize: true,
 			// synchronize: false,
 			migrations: [path.join(__dirname, './migrations/*')],
-			entities: [Post, User],
+			entities: [Post, User, Updoot],
 		});
 
 		await conn.runMigrations();
