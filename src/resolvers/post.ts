@@ -65,7 +65,7 @@ export class PostResolver {
 					UPDATE updoot SET value = $1
 					WHERE "postId" = $2 AND "userId" = $3;
 					`,
-					[userId, postId, realValue]
+					[realValue, postId, userId]
 				);
 
 				await tm.query(
@@ -133,16 +133,25 @@ export class PostResolver {
 	@Query(() => PaginatedPosts)
 	async posts(
 		@Arg('limit', () => Int) limit: number,
-		@Arg('cursor', () => String, { nullable: true }) cursor: string | null
+		@Arg('cursor', () => String, { nullable: true }) cursor: string | null,
+		@Ctx() { req }: MyContext
 	): Promise<PaginatedPosts> {
 		// 20 -> 21
 		const realLimit = Math.min(50, limit);
 		const realLimitPlusOne = realLimit + 1;
 
-		const replacements: Array<string | number | Date> = [realLimitPlusOne];
+		const replacements: Array<string | number | Date | null | undefined> = [
+			realLimitPlusOne,
+		];
 
+		if (req.session.userId) {
+			replacements.push(req.session.userId);
+		}
+
+		let cursorIdx = 3;
 		if (cursor) {
 			replacements.push(new Date(parseInt(cursor)));
+			cursorIdx = replacements.length;
 		}
 
 		const posts = await getConnection().query(
@@ -155,10 +164,15 @@ export class PostResolver {
 				'email', _user.email,
 				'createdAt', _user."createdAt",
 				'updatedAt', _user."updatedAt"
-			) AS creator
+			) AS creator,
+			${
+				req.session.userId
+					? '(SELECT value FROM updoot WHERE "userId" = $2 AND "postId" = _post.id) AS "voteStatus"'
+					: 'null as "voteStatus"'
+			}
 			FROM public.post AS _post
 			INNER JOIN public.user AS _user ON _user.id = _post."creatorId"
-			${cursor ? /*sql*/ `WHERE _post."createdAt" < $2` : ''}
+			${cursor ? /*sql*/ `WHERE _post."createdAt" < $${cursorIdx}` : ''}
 			ORDER BY _post."createdAt" DESC
 			LIMIT $1
 		`,
