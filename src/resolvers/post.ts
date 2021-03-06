@@ -220,18 +220,34 @@ export class PostResolver {
 	}
 
 	@Mutation(() => Post, { nullable: true })
+	@UseMiddleware(isAuth)
 	async updatePost(
-		@Arg('id') id: number,
-		@Arg('title', () => String, { nullable: true }) title: string
+		@Arg('id', () => Int) id: number,
+		@Arg('title') title: string,
+		@Arg('text') text: string,
+		@Ctx() { req }: MyContext
 	): Promise<Post | null> {
-		const post = await Post.findOne(id);
-		if (!post) {
-			return null;
-		}
-		if (typeof title !== 'undefined') {
-			await Post.update({ id }, { title });
-		}
-		return post;
+		// const post = await Post.findOne(id);
+		// if (!post) {
+		// 	return null;
+		// }
+		// if (typeof title !== 'undefined') {
+		// 	await Post.update({ id }, { title });
+		// }
+		// return Post.update({ id, creatorId: req.session.userId }, { title, text });
+		// return post;
+		return (
+			await getConnection()
+				.createQueryBuilder()
+				.update(Post)
+				.set({ title, text })
+				.where('id = :id AND "creatorId" = :creatorId', {
+					id,
+					creatorId: req.session.userId,
+				})
+				.returning('*')
+				.execute()
+		).raw[0];
 	}
 
 	@Mutation(() => Boolean)
@@ -240,15 +256,16 @@ export class PostResolver {
 		@Arg('id', () => Int) id: number,
 		@Ctx() { req }: MyContext
 	): Promise<boolean> {
-		const post = await Post.findOne(id);
-		if (!post) {
-			return false;
-		}
-		if (post?.creatorId !== req.session.userId) {
-			throw new Error('not authorized');
-		}
+		// const post = await Post.findOne(id);
+		// if (!post) {
+		// 	return false;
+		// }
+		// if (post?.creatorId !== req.session.userId) {
+		// 	throw new Error('not authorized');
+		// }
 
-		await Updoot.delete({ postId: id });
+		// await Updoot.delete({ postId: id });
+
 		await Post.delete({ id, creatorId: req.session.userId });
 		return true;
 	}
