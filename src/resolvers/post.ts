@@ -17,6 +17,7 @@ import { MyContext } from '../types';
 import { isAuth } from '../middleware/isAuth';
 import { getConnection } from 'typeorm';
 import { Updoot } from '../entities/Updoot';
+import { User } from '../entities/User';
 
 @InputType()
 class PostInput {
@@ -39,6 +40,27 @@ export class PostResolver {
 	@FieldResolver(() => String)
 	textSnippet(@Root() post: Post) {
 		return post.text.slice(0, 50);
+	}
+
+	@FieldResolver(() => User)
+	creator(@Root() post: Post, @Ctx() { userLoader }: MyContext) {
+		return userLoader.load(post.creatorId);
+	}
+
+	@FieldResolver(() => Int, { nullable: true })
+	async voteStatus(
+		@Root() post: Post,
+		@Ctx() { updootLoader, req }: MyContext
+	) {
+		if (!req.session.userId) {
+			return null;
+		}
+
+		const updoot = await updootLoader.load({
+			postId: post.id,
+			userId: req.session.userId,
+		});
+		return updoot ? updoot.value : null;
 	}
 
 	@Mutation(() => Boolean)
@@ -133,8 +155,8 @@ export class PostResolver {
 	@Query(() => PaginatedPosts)
 	async posts(
 		@Arg('limit', () => Int) limit: number,
-		@Arg('cursor', () => String, { nullable: true }) cursor: string | null,
-		@Ctx() { req }: MyContext
+		@Arg('cursor', () => String, { nullable: true }) cursor: string | null
+		// @Ctx() { req }: MyContext
 	): Promise<PaginatedPosts> {
 		// 20 -> 21
 		const realLimit = Math.min(50, limit);
@@ -144,42 +166,38 @@ export class PostResolver {
 			realLimitPlusOne,
 		];
 
-		if (req.session.userId) {
-			replacements.push(req.session.userId);
-		}
+		// if (req.session.userId) {
+		// 	replacements.push(req.session.userId);
+		// }
 
-		let cursorIdx = 3;
 		if (cursor) {
 			replacements.push(new Date(parseInt(cursor)));
-			cursorIdx = replacements.length;
 		}
 
 		const posts = await getConnection().query(
 			/*sql*/ `
 			SELECT
-			_post.*,
-			JSON_BUILD_OBJECT(
-				'id', _user.id,
-				'username', _user.username,
-				'email', _user.email,
-				'createdAt', _user."createdAt",
-				'updatedAt', _user."updatedAt"
-			) AS creator,
-			${
-				req.session.userId
-					? '(SELECT value FROM updoot WHERE "userId" = $2 AND "postId" = _post.id) AS "voteStatus"'
-					: 'null as "voteStatus"'
-			}
+			_post.*
+
 			FROM public.post AS _post
-			INNER JOIN public.user AS _user ON _user.id = _post."creatorId"
-			${cursor ? /*sql*/ `WHERE _post."createdAt" < $${cursorIdx}` : ''}
+			-- INNER JOIN public.user AS _user ON _user.id = _post."creatorId"
+			${cursor ? /*sql*/ `WHERE _post."createdAt" < $2` : ''}
+
 			ORDER BY _post."createdAt" DESC
 			LIMIT $1
 		`,
 			replacements
 		);
 
-		console.log(posts);
+		// console.log(posts);
+
+		// -- ${cursor ? /*sql*/ `WHERE _post."createdAt" < $${cursorIdx}` : ''}
+
+		// 		${
+		// 	req.session.userId
+		// 		? '(SELECT value FROM updoot WHERE "userId" = $2 AND "postId" = _post.id) AS "voteStatus"'
+		// 		: 'null as "voteStatus"'
+		// }
 
 		// const qb = getConnection()
 		// 	.getRepository(Post)
@@ -204,7 +222,8 @@ export class PostResolver {
 
 	@Query(() => Post, { nullable: true })
 	post(@Arg('id', () => Int) id: number): Promise<Post | undefined> {
-		return Post.findOne(id, { relations: ['creator'] });
+		// return Post.findOne(id, { relations: ['creator'] });
+		return Post.findOne(id);
 	}
 
 	@Mutation(() => Post)
