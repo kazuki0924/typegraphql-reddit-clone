@@ -60,6 +60,7 @@ export class PostResolver {
 			postId: post.id,
 			userId: req.session.userId,
 		});
+
 		return updoot ? updoot.value : null;
 	}
 

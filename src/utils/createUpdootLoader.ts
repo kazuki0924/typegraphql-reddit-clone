@@ -9,7 +9,7 @@ export const createUpdootLoader = () =>
 			).reduce(
 				(acc, updoot) => ({
 					...acc,
-					[`${updoot.userId}#${updoot.userId}`]: updoot,
+					[`${updoot.userId}#${updoot.postId}`]: updoot,
 				}),
 				{} as Record<string, Updoot>
 			);
