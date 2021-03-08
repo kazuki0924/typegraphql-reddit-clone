@@ -68,10 +68,10 @@ import 'dotenv-safe/config';
 					httpOnly: true,
 					sameSite: 'lax', // csrf
 					secure: IS_PRODUCTION, // cookie only works in https
-					domain: IS_PRODUCTION ? '.my-domain.com' : undefined,
+					domain: IS_PRODUCTION ? '.my-dev-domain.com' : undefined,
 				},
 				saveUninitialized: false,
-				secret: process.env.SESSION_SECRET || '',
+				secret: process.env.SESSION_SECRET as string,
 				resave: false,
 			})
 		);
@@ -101,7 +101,7 @@ import 'dotenv-safe/config';
 			cors: false,
 		});
 
-		app.listen(parseInt(process.env.PORT || ''), () => {
+		app.listen(parseInt(process.env.PORT as string), () => {
 			console.log('server started on localhost:4000');
 		});
 
