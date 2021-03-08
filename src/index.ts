@@ -19,17 +19,20 @@ import { PostResolver } from './resolvers/post';
 import { UserResolver } from './resolvers/user';
 import { createUpdootLoader } from './utils/createUpdootLoader';
 import { createUserLoader } from './utils/createUserLoader';
+import 'dotenv-safe/config';
 
 (async () => {
 	try {
 		// const conn = await createConnection({
 		const conn = await createConnection({
 			type: 'postgres',
-			database: 'typegraphql-reddit-clone',
-			username: 'postgres',
-			password: 'postgres',
+			// database: 'typegraphql-reddit-clone',
+			// username: 'postgres',
+			// password: 'postgres',
+			url: process.env.DATABASE_URL,
+
 			logging: true,
-			synchronize: true,
+			// synchronize: true,
 			// synchronize: false,
 			migrations: [path.join(__dirname, './migrations/*')],
 			entities: [Post, User, Updoot],
@@ -46,9 +49,11 @@ import { createUserLoader } from './utils/createUserLoader';
 		const app = express();
 
 		const RedisStore = connectRedis(session);
-		const redis = new Redis();
+		const redis = new Redis(process.env.REDIS_URL);
 
-		app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+		app.set('trust proxy', 1);
+
+		app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
 
 		app.use(
 			session({
@@ -63,9 +68,10 @@ import { createUserLoader } from './utils/createUserLoader';
 					httpOnly: true,
 					sameSite: 'lax', // csrf
 					secure: IS_PRODUCTION, // cookie only works in https
+					domain: IS_PRODUCTION ? '.my-domain.com' : undefined,
 				},
 				saveUninitialized: false,
-				secret: 'secret',
+				secret: process.env.SESSION_SECRET || '',
 				resave: false,
 			})
 		);
@@ -95,7 +101,7 @@ import { createUserLoader } from './utils/createUserLoader';
 			cors: false,
 		});
 
-		app.listen(4000, () => {
+		app.listen(parseInt(process.env.PORT || ''), () => {
 			console.log('server started on localhost:4000');
 		});
 

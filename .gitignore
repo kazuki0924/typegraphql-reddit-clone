@@ -4,3 +4,4 @@
 /yarn.lock
 */migrations
 .env
+.env.production
