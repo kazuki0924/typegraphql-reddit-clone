@@ -90,9 +90,6 @@ export class UserResolver {
 			};
 		}
 
-		// user.password = await argon2.hash(newPassword);
-
-		// await em.persistAndFlush(user);
 		await User.update(
 			{ id: parsedUserId },
 			{ password: await argon2.hash(newPassword) }
@@ -139,7 +136,6 @@ export class UserResolver {
 			return null;
 		}
 
-		// const user = await em.findOne(User, { id: req.session.userId });
 		return User.findOne(req.session.userId);
 	}
 
@@ -154,26 +150,9 @@ export class UserResolver {
 		}
 
 		const hashedPassword = await argon2.hash(options.password);
-		// const user = em.create(User, {
-		// 	username: options.username,
-		// 	password: hashedPassword,
-		// });
 
 		let user;
 		try {
-			// await em.persistAndFlush(user);
-			// const res = await (em as EntityManager)
-			// 	.createQueryBuilder(User)
-			// 	.getKnexQuery()
-			// 	.insert({
-			// 		username: options.username,
-			// 		password: hashedPassword,
-			// 		email: options.email,
-			// 		created_at: new Date(),
-			// 		updated_at: new Date(),
-			// 	})
-			// 	.returning('*');
-			// user = res[0];
 			const insertRes = await getConnection()
 				.createQueryBuilder()
 				.insert()

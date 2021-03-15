@@ -28,7 +28,6 @@
 		"typescript": "^4.1.5"
 	},
 	"dependencies": {
-		"@mermaid-js/mermaid-cli": "^8.9.1",
 		"apollo-server-express": "^2.21.0",
 		"argon2": "^0.27.1",
 		"class-validator": "^0.13.1",

@@ -17,16 +17,3 @@ export const createUpdootLoader = () =>
 			return keys.map(({ userId, postId }) => record[`${userId}#${postId}`]);
 		}
 	);
-
-// export const createUserLoader = () =>
-// 	new DataLoader<number, User>(async userIds => {
-// 		const users = await User.findByIds(userIds as number[]);
-
-// const userIdToUser: Record<number, User> = {};
-
-// users.forEach(user => {
-// 	userIdToUser[user.id] = user;
-// });
-
-// 	return userIds.map(userId => userIdToUser[userId]);
-// });

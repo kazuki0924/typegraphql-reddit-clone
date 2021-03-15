@@ -2,7 +2,7 @@ erDiagram
 
 user ||--o{ post : owns
 post ||--o{ updoot : has
-user }|--o{ updoot : has
+user }|--o{ updoot : does
 
 user {
 number id

@@ -73,11 +73,6 @@ export class PostResolver {
 	) {
 		const realValue = value === -1 ? -1 : 1;
 		const { userId } = req.session;
-		// await Updoot.insert({
-		// 	userId,
-		// 	postId,
-		// 	value: realValue,
-		// });
 
 		const updoot = await Updoot.findOne({ where: { postId, userId } });
 
@@ -119,37 +114,6 @@ export class PostResolver {
 			});
 		}
 
-		// await getConnection().transaction(async tm => {
-		// 	await tm.query(
-		// 		/* sql*/ `
-		// 	INSERT INTO updoot ("userId", "postId", "value")
-		// 	VALUES ($1, $2, $3);
-		// `,
-		// 		[userId, postId, realValue]
-		// 	);
-
-		// 	await tm.query(
-		// 		/* sql*/ `
-		// 	UPDATE post SET points = points + $1
-		// 	WHERE id = $2;
-		// `,
-		// 		[2 * realValue, postId]
-		// 	);
-		// });
-		// await getConnection().query(
-		// 	/* sql*/ `
-		// 			WITH
-		// START TRANSACTION,
-
-		// INSERT INTO updoot ("userId", "postId", "value")
-		// VALUES ($1, $2, $3),
-		// UPDATE post SET points = points + $3
-		// WHERE id = $2,
-		// COMMIT;
-		// `,
-		// 	[userId, postId, realValue]
-		// );
-
 		return true;
 	}
 
@@ -157,19 +121,13 @@ export class PostResolver {
 	async posts(
 		@Arg('limit', () => Int) limit: number,
 		@Arg('cursor', () => String, { nullable: true }) cursor: string | null
-		// @Ctx() { req }: MyContext
 	): Promise<PaginatedPosts> {
-		// 20 -> 21
 		const realLimit = Math.min(50, limit);
 		const realLimitPlusOne = realLimit + 1;
 
 		const replacements: Array<string | number | Date | null | undefined> = [
 			realLimitPlusOne,
 		];
-
-		// if (req.session.userId) {
-		// 	replacements.push(req.session.userId);
-		// }
 
 		if (cursor) {
 			replacements.push(new Date(parseInt(cursor)));
@@ -181,7 +139,6 @@ export class PostResolver {
 			_post.*
 
 			FROM public.post AS _post
-			-- INNER JOIN public.user AS _user ON _user.id = _post."creatorId"
 			${cursor ? /*sql*/ `WHERE _post."createdAt" < $2` : ''}
 
 			ORDER BY _post."createdAt" DESC
@@ -189,31 +146,6 @@ export class PostResolver {
 		`,
 			replacements
 		);
-
-		// console.log(posts);
-
-		// -- ${cursor ? /*sql*/ `WHERE _post."createdAt" < $${cursorIdx}` : ''}
-
-		// 		${
-		// 	req.session.userId
-		// 		? '(SELECT value FROM updoot WHERE "userId" = $2 AND "postId" = _post.id) AS "voteStatus"'
-		// 		: 'null as "voteStatus"'
-		// }
-
-		// const qb = getConnection()
-		// 	.getRepository(Post)
-		// 	.createQueryBuilder('p')
-		// 	.innerJoinAndSelect('p.creator', 'u', 'u.id = p."creatorId"')
-		// 	.orderBy('p."createdAt"', 'DESC')
-		// 	.take(realLimitPlusOne);
-
-		// if (cursor) {
-		// 	qb.where('p."createdAt" < :cursor', {
-		// 		cursor: new Date(parseInt(cursor)),
-		// 	});
-		// }
-
-		// const posts = await qb.getMany();
 
 		return {
 			posts: posts.slice(0, realLimit),
@@ -223,7 +155,6 @@ export class PostResolver {
 
 	@Query(() => Post, { nullable: true })
 	post(@Arg('id', () => Int) id: number): Promise<Post | undefined> {
-		// return Post.findOne(id, { relations: ['creator'] });
 		return Post.findOne(id);
 	}
 
@@ -247,15 +178,6 @@ export class PostResolver {
 		@Arg('text') text: string,
 		@Ctx() { req }: MyContext
 	): Promise<Post | null> {
-		// const post = await Post.findOne(id);
-		// if (!post) {
-		// 	return null;
-		// }
-		// if (typeof title !== 'undefined') {
-		// 	await Post.update({ id }, { title });
-		// }
-		// return Post.update({ id, creatorId: req.session.userId }, { title, text });
-		// return post;
 		return (
 			await getConnection()
 				.createQueryBuilder()
@@ -276,16 +198,6 @@ export class PostResolver {
 		@Arg('id', () => Int) id: number,
 		@Ctx() { req }: MyContext
 	): Promise<boolean> {
-		// const post = await Post.findOne(id);
-		// if (!post) {
-		// 	return false;
-		// }
-		// if (post?.creatorId !== req.session.userId) {
-		// 	throw new Error('not authorized');
-		// }
-
-		// await Updoot.delete({ postId: id });
-
 		await Post.delete({ id, creatorId: req.session.userId });
 		return true;
 	}
